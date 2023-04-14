@@ -24,12 +24,8 @@ package org.owasp.webgoat.lessons.jwt;
 
 import static org.springframework.http.ResponseEntity.ok;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -104,7 +100,8 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     try {
-      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+      // .parseClaimsJws, verifica la firma del token
+      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJws(token.replace("Bearer ", ""));
       Claims claims = (Claims) jwt.getBody();
       String user = (String) claims.get("user");
       if ("Tom".equals(user)) {
@@ -134,7 +131,7 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
     String refreshToken;
     try {
       Jwt<Header, Claims> jwt =
-          Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+          Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJwt(token.replace("Bearer ", ""));
       user = (String) jwt.getBody().get("user");
       refreshToken = (String) json.get("refresh_token");
     } catch (ExpiredJwtException e) {
