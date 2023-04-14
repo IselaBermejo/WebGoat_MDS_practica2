@@ -24,12 +24,8 @@ package org.owasp.webgoat.lessons.jwt;
 
 import static org.springframework.http.ResponseEntity.ok;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -104,10 +100,18 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     try {
+      // Construimos el objeto
       Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
       Claims claims = (Claims) jwt.getBody();
       String user = (String) claims.get("user");
       if ("Tom".equals(user)) {
+          // Nuevo -> con el metodo builder creamos la firma
+          Jwts.builder()
+                  .setSubject(user) // establecer user como identificador
+                  .setClaims(claims) // incluimos todas las claims
+                  .signWith(SignatureAlgorithm.HS256, JWT_PASSWORD) // se firma con el algoritmo HS256
+                  .compact(); // genera el token (cadena de caracteres)
+
         if ("none".equals(jwt.getHeader().get("alg"))) {
           return ok(success(this).feedback("jwt-refresh-alg-none").build());
         }
@@ -137,6 +141,13 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
           Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
       user = (String) jwt.getBody().get("user");
       refreshToken = (String) json.get("refresh_token");
+
+      // Nuevo -> con el metodo builder creamos la firma
+        Jwts.builder()
+                .setSubject(user) // establecer user como identificadorç
+                .signWith(SignatureAlgorithm.HS256, JWT_PASSWORD) // se firma con el algoritmo HS256
+                .compact(); // genera el token (cadena de caracteres)
+
     } catch (ExpiredJwtException e) {
       user = (String) e.getClaims().get("user");
       refreshToken = (String) json.get("refresh_token");
