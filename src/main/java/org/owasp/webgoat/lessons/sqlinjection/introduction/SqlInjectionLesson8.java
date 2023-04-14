@@ -56,26 +56,20 @@ public class SqlInjectionLesson8 extends AssignmentEndpoint {
 
   @PostMapping("/SqlInjection/attack8")
   @ResponseBody
-  public AttackResult completed(@RequestParam String name, @RequestParam String auth_tan) {
-    return injectableQueryConfidentiality(name, auth_tan);
+  public AttackResult completed(@RequestParam(required = true) String name, @RequestParam(required = true) String authTan) {
+    return injectableQueryConfidentiality(name, authTan);
   }
 
-  protected AttackResult injectableQueryConfidentiality(String name, String auth_tan) {
+  protected AttackResult injectableQueryConfidentiality(String name, String authTan) {
     StringBuilder output = new StringBuilder();
-    String query =
-        "SELECT * FROM employees WHERE last_name = '"
-            + name
-            + "' AND auth_tan = '"
-            + auth_tan
-            + "'";
+    String query = "SELECT * FROM employees WHERE last_name = ? AND authTan = ?"; //cambiamos la consulta dinámica por una con parámetros
 
     try (Connection connection = dataSource.getConnection()) {
-      try {
-        Statement statement =
-            connection.createStatement(
-                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+      try (PreparedStatement statement = connection.prepareStatement(query)){
+        statement.setString(1, name);
+        statement.setString(2, authTan);
         log(connection, query);
-        ResultSet results = statement.executeQuery(query);
+        ResultSet results = statement.executeQuery();
 
         if (results.getStatement() != null) {
           if (results.first()) {
@@ -150,12 +144,13 @@ public class SqlInjectionLesson8 extends AssignmentEndpoint {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     String time = sdf.format(cal.getTime());
 
-    String logQuery =
-        "INSERT INTO access_log (time, action) VALUES ('" + time + "', '" + action + "')";
+    String logQuery = "INSERT INTO access_log (time, action) VALUES (?, ?)";
 
-    try {
-      Statement statement = connection.createStatement(TYPE_SCROLL_SENSITIVE, CONCUR_UPDATABLE);
+    try( PreparedStatement statement = connection.prepareStatement(logQuery)) {
+      statement.setString(1, time);
+      statement.setString(2, action);
       statement.executeUpdate(logQuery);
+
     } catch (SQLException e) {
       System.err.println(e.getMessage());
     }
