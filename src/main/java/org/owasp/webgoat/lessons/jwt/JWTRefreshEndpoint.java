@@ -100,18 +100,11 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     try {
-      // Construimos el objeto
-      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+      // .parseClaimsJws, verifica la firma del token
+      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJws(token.replace("Bearer ", ""));
       Claims claims = (Claims) jwt.getBody();
       String user = (String) claims.get("user");
       if ("Tom".equals(user)) {
-          // Nuevo -> con el metodo builder creamos la firma
-          Jwts.builder()
-                  .setSubject(user) // establecer user como identificador
-                  .setClaims(claims) // incluimos todas las claims
-                  .signWith(SignatureAlgorithm.HS256, JWT_PASSWORD) // se firma con el algoritmo HS256
-                  .compact(); // genera el token (cadena de caracteres)
-
         if ("none".equals(jwt.getHeader().get("alg"))) {
           return ok(success(this).feedback("jwt-refresh-alg-none").build());
         }
@@ -138,16 +131,9 @@ public class JWTRefreshEndpoint extends AssignmentEndpoint {
     String refreshToken;
     try {
       Jwt<Header, Claims> jwt =
-          Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+          Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJwt(token.replace("Bearer ", ""));
       user = (String) jwt.getBody().get("user");
       refreshToken = (String) json.get("refresh_token");
-
-      // Nuevo -> con el metodo builder creamos la firma
-        Jwts.builder()
-                .setSubject(user) // establecer user como identificadorç
-                .signWith(SignatureAlgorithm.HS256, JWT_PASSWORD) // se firma con el algoritmo HS256
-                .compact(); // genera el token (cadena de caracteres)
-
     } catch (ExpiredJwtException e) {
       user = (String) e.getClaims().get("user");
       refreshToken = (String) json.get("refresh_token");
